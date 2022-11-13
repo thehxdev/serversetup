@@ -123,12 +123,12 @@ function disable_firewalls() {
 }
 
 function debian_halifax_mirrors() {
-	debian_version_check
-	#check_root
-	sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
-	judge "make backup from sources.list"
-	if [[ -s "/etc/apt/sources.list.bak" ]]; then
-		sudo tee /etc/apt/sources.list <<EOF
+    debian_version_check
+    #check_root
+    sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+    judge "make backup from sources.list"
+    if [[ -s "/etc/apt/sources.list.bak" ]]; then
+        sudo tee /etc/apt/sources.list <<EOF
 deb http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME} main non-free contrib
 deb-src http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME} main non-free contrib
 
@@ -138,24 +138,28 @@ deb-src http://security.debian.org/debian-security ${VERSION_CODENAME}-security 
 deb http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME}-updates main contrib non-free
 deb-src http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME}-updates main contrib non-free
 EOF
-		judge "update mirrors to halifax"
-	else
-		print_error "can't find backup file for sources.list"
-	fi
-	update_repos
+        judge "update mirrors to halifax"
+    else
+        print_error "can't find backup file for sources.list"
+    fi
+    update_repos
 }
 
 function update_repos() {
-	sudo apt update -y
-	judge "update repos"
+    sudo apt update -y
+    judge "update repos"
 }
 
 function install_deps() {
+    update_repos
     installit lsof tar
     judge "Install lsof tar"
 
-    installit cron
-    judge "install crontab"
+    installit cron htop
+    judge "install crontab htop"
+
+    installit ripgrep fd
+    judge "install ripgrep fd-find"
 
     touch /var/spool/cron/crontabs/root && chmod 600 /var/spool/cron/crontabs/root
     systemctl start cron && systemctl enable cron
@@ -263,3 +267,104 @@ function xray_install() {
     gpasswd -a nobody nobody
     judge "add nobody user to nobody group"
 }
+
+function configure_bash() {
+    tee -a $HOME/.bashrc <<EOF
+export PATH=/usr/local/bin:\$PATH
+
+alias nv="nvim"
+alias tm="tmux"
+alias pt="proxychains -q -f /etc/proxychains4.conf"
+alias spt="sudo proxychains -q -f /etc/proxychains4.conf"
+EOF
+    judge "configure bash"
+}
+
+function caddy_install() {
+    installit debian-keyring debian-archive-keyring apt-transport-https
+    judge "install caddy dependencies"
+
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+    judge "add caddy gpg keys"
+
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+    judge "add caddy repository"
+
+    update_repos
+    installit caddy
+}
+
+function matrix_menu() {
+    echo -e "==================== Matrix ===================="
+    echo -e "${Green}1. Install Matrix Synapse (Official repos)${Color_Off}"
+    echo -e "${Green}2. Install PostgreSQL 13${Color_Off}"
+    echo -e "${Green}3. Install Caddy 2${Color_Off}"
+
+    read -rp "Enter an Option: " matrix_menu_num
+    case $matrix_menu_num in 
+        1)
+            ;;
+        2)
+            ;;
+        3)
+            caddy_install
+    esac
+}
+
+function main_menu() {
+    clear
+
+    echo -e "==================== Anti Filter ===================="
+    echo -e "${Green}1. Install Xray${Color_Off}"
+    echo -e "${Green}2. Change DNS to Shecan${Color_Off}"
+    echo -e "${Green}3. Change DNS to Cloudflare${Color_Off}"
+    echo -e "======================= Tools ======================="
+    echo -e "${Green}4. Install Usfull Packages${Color_Off}"
+    echo -e "${Green}5. Basic Optimization${Color_Off}"
+    echo -e "${Green}6. Disable Firewalls${Color_Off}"
+    echo -e "${Green}7. Configure Bash${Color_Off}"
+    echo -e "${Green}8. Change Mirrors to Halifax${Color_Off}"
+    echo -e "${Green}9. Install Caddy 2${Color_Off}"
+    echo -e "====================== Services ====================="
+    echo -e "${Green}10. Matrix Menu${Color_Off}"
+
+    read -rp "Enter an Option: " menu_num
+    case $menu_num in 
+        1)
+            xray_install
+            ;;
+        2)
+            shecan_dns
+            ;;
+        3)
+            cloudflare_dns
+            ;;
+        4)
+            install_deps
+            ;;
+        5)
+            basic_optimization
+            ;;
+        6)
+            disable_firewalls
+            ;;
+        7)
+            configure_bash
+            ;;
+        8)
+            debian_halifax_mirrors
+            ;;
+        9)
+            caddy_install
+            ;;
+        10)
+            matrix_menu
+            ;;
+        *)
+            print_error "Invalid Option! Run script again."
+            exit 1
+    esac
+}
+
+check_root
+main_menu "$@"

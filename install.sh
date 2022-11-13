@@ -314,17 +314,25 @@ function matrix_synapse_install_pypi() {
 
     mkdir -p $HOME/synapse >/dev/null 2>&1
 
-    virtualenv -p python3 ~/synapse/env
-    source ~/synapse/env/bin/activate
+    virtualenv -p python3 $HOME/synapse/env
+    source $HOME/synapse/env/bin/activate
 
     pip install --upgrade pip
     pip install --upgrade setuptools
     pip install matrix-synapse
-
-    cd $HOME/synapse
-    read -rp "Enter your domain (Server Name) for synapse (e.g. sub.example.xxx):" domain
-    python -m synapse.app.homeserver --server-name ${domain} --config-path homeserver.yaml --generate-config --report-stats=no
+    exit
 }
+
+#function matrix_synapse_configure_pypi() {
+#    cd $HOME/synapse
+#    read -rp "Enter your domain (Server Name) for synapse (e.g. sub.example.xxx):" domain
+#    python -m synapse.app.homeserver --server-name ${domain} --config-path homeserver.yaml --generate-config --report-stats=no
+#}
+
+#function matrix_synapse_start_pypi() {
+#    source $HOME/synapse/env/bin/activate
+#    synctl start
+#}
 
 function matrix_menu() {
     echo -e "==================== Matrix ===================="

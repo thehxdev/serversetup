@@ -164,7 +164,7 @@ function install_deps() {
     installit unzip gzip
     judge "install unzip gzip"
 
-    installit curl wget git
+    installit curl wget git proxychains4
     judge "install curl wget git"
 
     installit libpcre3 libpcre3-dev zlib1g-dev openssl libssl-dev
@@ -173,10 +173,17 @@ function install_deps() {
     installit qrencode neovim
     judge "install qrencode neovim"
 
-    installit jq
-    judge "install jq"
+    installit jq tmux
+    judge "install jq tmux"
 
     mkdir /usr/local/bin >/dev/null 2>&1
+}
+
+function build_tools_install() {
+    update_repos
+
+    installit llvm build-essential
+    judge "install llvm build-essential"
 }
 
 function basic_optimization() {

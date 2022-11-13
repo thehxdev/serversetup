@@ -327,6 +327,7 @@ function main_menu() {
     echo -e "${Green}9. Install Caddy 2${Color_Off}"
     echo -e "====================== Services ====================="
     echo -e "${Green}10. Matrix Menu${Color_Off}"
+    echo -e "${Yellow}11. Exit${Color_Off}"
 
     read -rp "Enter an Option: " menu_num
     case $menu_num in 
@@ -359,6 +360,10 @@ function main_menu() {
             ;;
         10)
             matrix_menu
+            ;;
+        11)
+            print_ok "Exit"
+            exit 0
             ;;
         *)
             print_error "Invalid Option! Run script again."

@@ -294,6 +294,38 @@ function caddy_install() {
     installit caddy
 }
 
+function matrix_synapse_install() {
+    installit lsb-release wget apt-transport-https python3 python3-pip
+    judge "Install synapse dependencies"
+
+    wget -O /usr/share/keyrings/matrix-org-archive-keyring.gpg https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
+    judge "Get synapse gpg keys"
+
+    echo "deb [signed-by=/usr/share/keyrings/matrix-org-archive-keyring.gpg] https://packages.matrix.org/debian/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/matrix-org.list
+    judge "Add matrix synapse repos"
+
+    update_repos
+    installit matrix-synapse-py3
+}
+
+function matrix_synapse_install_pypi() {
+    installit python3 build-essential python3-dev libffi-dev python3-pip python3-setuptools sqlite3 libssl-dev virtualenv libjpeg-dev libxslt1-dev
+    judge "Install synapse dependencies to install it with pip"
+
+    mkdir -p $HOME/synapse >/dev/null 2>&1
+
+    virtualenv -p python3 ~/synapse/env
+    source ~/synapse/env/bin/activate
+
+    pip install --upgrade pip
+    pip install --upgrade setuptools
+    pip install matrix-synapse
+
+    cd $HOME/synapse
+    read -rp "Enter your domain (Server Name) for synapse (e.g. sub.example.xxx):" domain
+    python -m synapse.app.homeserver --server-name ${domain} --config-path homeserver.yaml --generate-config --report-stats=no
+}
+
 function matrix_menu() {
     echo -e "==================== Matrix ===================="
     echo -e "${Green}1. Install Matrix Synapse (Official repos)${Color_Off}"

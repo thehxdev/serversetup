@@ -55,7 +55,7 @@ function judge() {
 # Check the shell
 function check_bash() {
     is_BASH=$(readlink /proc/$$/exe | grep -q "bash")
-    if [[ $is_BASH -ne "bash" ]]; then
+    if [[ -z ${is_BASH} ]]; then
         print_error "This installer needs to be run with bash, not sh."
         exit
     fi
@@ -67,7 +67,7 @@ function check_root() {
         print_error "This installer needs to be run with superuser privileges. Login as root user and run the script again!"
         exit
     else 
-        print_ok "Root user checked!" ; $SLEEP
+        print_ok "Root user checked!" && $SLEEP
     fi
 }
 

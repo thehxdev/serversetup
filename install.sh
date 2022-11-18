@@ -15,6 +15,7 @@ Cyan='\033[0;36m'
 website_dir="/var/www/html" 
 random_num=$((RANDOM % 12 + 4))
 nginx_conf="/etc/nginx/sites-available/default"
+caddy_conf="/etc/caddy/Caddyfile"
 
 OK="${Green}[OK]"
 ERROR="${Red}[ERROR]"
@@ -294,6 +295,32 @@ function caddy_install() {
     installit caddy
 }
 
+function caddy_configure() {
+    port_exist_check 80
+    port_exist_check 8008
+
+    read -rp "Enter Your Domain (Matrix Server Name): " domain
+
+    if [ -e "${caddy_conf}" ]; then
+        cat << EOF > ${caddy_conf}
+$domain {
+  reverse_proxy /_matrix/* localhost:8008
+  reverse_proxy /_synapse/client/* localhost:8008
+  reverse_proxy localhost:8008
+}
+
+$domain:8448 {
+  reverse_proxy localhost:8008
+}
+EOF
+    fi
+
+    systemctl restart caddy.service
+    judge "restart caddy"
+
+    print_ok "caddy configured"
+}
+
 function matrix_synapse_install() {
     installit lsb-release wget apt-transport-https python3 python3-pip
     judge "Install synapse dependencies"
@@ -334,20 +361,39 @@ function matrix_synapse_install_pypi() {
 #    synctl start
 #}
 
+function postgres_install() {
+    installit postgresql
+}
+
 function matrix_menu() {
     echo -e "==================== Matrix ===================="
     echo -e "${Green}1. Install Matrix Synapse (Official repos)${Color_Off}"
     echo -e "${Green}2. Install PostgreSQL 13${Color_Off}"
     echo -e "${Green}3. Install Caddy 2${Color_Off}"
+    echo -e "${Green}4. Configure Caddy for synapse (Reverse Proxy)${Color_Off}"
+    echo -e "${Yellow}5. Exit${Color_Off}"
 
     read -rp "Enter an Option: " matrix_menu_num
     case $matrix_menu_num in 
         1)
+            matrix_synapse_install
             ;;
         2)
+            postgres_install
             ;;
         3)
             caddy_install
+            ;;
+        4)
+            caddy_configure
+            ;;
+        5)
+            print_ok "Exit"
+            exit 0
+            ;;
+        *)
+            print_error "Invalid Option. Run script again!"
+            exit 1
     esac
 }
 

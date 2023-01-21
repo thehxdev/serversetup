@@ -305,6 +305,30 @@ EOF
 }
 
 
+function add_socks_proxy_to_apt() {
+    read -rp "Enter an Proxy IP: " proxy_ip
+    read -rp "Enter an Proxy Port: " proxy_port
+    echo -e "Acquire::http::proxy \"socks5h://${proxy_ip}:${proxy_port}\";" > /etc/apt/apt.conf
+}
+
+
+function add_http_proxy_to_docker() {
+    read -rp "Enter an Proxy IP: " proxy_ip
+    read -rp "Enter an Proxy Port: " proxy_port
+
+    path="/etc/systemd/system/docker.service.d"
+    mkdir -p ${path}
+    tee ${path}/http-proxy.conf <<EOF
+[Service]
+Environment="HTTP_PROXY=http://${proxy_ip}:${proxy_port}/"
+Environment="HTTPS_PROXY=http://${proxy_ip}:${proxy_port}/"
+EOF
+
+    systemctl daemon-reload
+    systemctl restart docker
+}
+
+
 function configure_bash() {
     tee -a $HOME/.bashrc <<EOF
 export PATH=/usr/local/bin:\$PATH
@@ -331,7 +355,7 @@ function caddy_install() {
     installit caddy
 }
 
-function caddy_configure() {
+function caddy_matrix_configure() {
     port_exist_check 80
     port_exist_check 8008
 
@@ -371,21 +395,6 @@ function matrix_synapse_install() {
     installit matrix-synapse-py3
 }
 
-function matrix_synapse_install_pypi() {
-    installit python3 build-essential python3-dev libffi-dev python3-pip python3-setuptools sqlite3 libssl-dev virtualenv libjpeg-dev libxslt1-dev
-    judge "Install synapse dependencies to install it with pip"
-
-    mkdir -p $HOME/synapse >/dev/null 2>&1
-
-    virtualenv -p python3 $HOME/synapse/env
-    source $HOME/synapse/env/bin/activate
-
-    pip install --upgrade pip
-    pip install --upgrade setuptools
-    pip install matrix-synapse
-    exit
-}
-
 function postgres_install() {
     installit postgresql
 }
@@ -410,7 +419,7 @@ function matrix_menu() {
             caddy_install
             ;;
         4)
-            caddy_configure
+            caddy_matrix_configure
             ;;
         5)
             print_ok "Exit"
@@ -430,16 +439,18 @@ function main_menu() {
     echo -e "${Green}2. Install Clash-Core${Color_Off}"
     echo -e "${Green}3. Change DNS to Shecan${Color_Off}"
     echo -e "${Green}4. Change DNS to Cloudflare${Color_Off}"
+    echo -e "${Green}5. Add Socks5 proxy to APT${Color_Off}"
+    echo -e "${Green}6. Add HTTP proxy to Docker${Color_Off}"
     echo -e "======================= Tools ======================="
-    echo -e "${Green}5. Install Usfull Packages${Color_Off}"
-    echo -e "${Green}6. Basic Optimization${Color_Off}"
-    echo -e "${Green}7. Disable Firewalls${Color_Off}"
-    echo -e "${Green}8. Configure Bash${Color_Off}"
-    echo -e "${Green}9. Change Mirrors to ftp.de.debian.org${Color_Off}"
-    echo -e "${Green}10. Install Caddy 2${Color_Off}"
+    echo -e "${Green}7. Install Usfull Packages${Color_Off}"
+    echo -e "${Green}8. Basic Optimization${Color_Off}"
+    echo -e "${Green}9. Disable Firewalls${Color_Off}"
+    echo -e "${Green}10. Configure Bash${Color_Off}"
+    echo -e "${Green}11. Change Mirrors to ftp.de.debian.org${Color_Off}"
+    echo -e "${Green}12. Install Caddy 2${Color_Off}"
     echo -e "====================== Services ====================="
-    echo -e "${Green}11. Matrix Menu${Color_Off}"
-    echo -e "${Yellow}12. Exit${Color_Off}"
+    echo -e "${Green}13. Matrix Menu${Color_Off}"
+    echo -e "${Yellow}14. Exit${Color_Off}"
 
     read -rp "Enter an Option: " menu_num
     case $menu_num in 
@@ -456,27 +467,33 @@ function main_menu() {
             cloudflare_dns
             ;;
         5)
-            install_deps
+            add_socks_proxy_to_apt
             ;;
         6)
-            basic_optimization
+            add_http_proxy_to_docker
             ;;
         7)
-            disable_firewalls
+            install_deps
             ;;
         8)
-            configure_bash
+            basic_optimization
             ;;
         9)
-            debian_de
+            disable_firewalls
             ;;
         10)
-            caddy_install
+            configure_bash
             ;;
         11)
-            matrix_menu
+            debian_de
             ;;
         12)
+            caddy_install
+            ;;
+        13)
+            matrix_menu
+            ;;
+        14)
             print_ok "Exit"
             exit 0
             ;;

@@ -16,6 +16,7 @@ website_dir="/var/www/html"
 random_num=$((RANDOM % 12 + 4))
 nginx_conf="/etc/nginx/sites-available/default"
 caddy_conf="/etc/caddy/Caddyfile"
+CLASH_VERSION="2022.11.25"
 
 OK="${Green}[OK]"
 ERROR="${Red}[ERROR]"
@@ -123,23 +124,23 @@ function disable_firewalls() {
     fi
 }
 
-function debian_halifax_mirrors() {
+function debian_de() {
     debian_version_check
     #check_root
     sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
     judge "make backup from sources.list"
     if [[ -s "/etc/apt/sources.list.bak" ]]; then
         sudo tee /etc/apt/sources.list <<EOF
-deb http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME} main non-free contrib
-deb-src http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME} main non-free contrib
+deb http://ftp.de.debian.org/debian/ ${VERSION_CODENAME} main non-free contrib
+deb-src http://ftp.de.debian.org/debian/ ${VERSION_CODENAME} main non-free contrib
 
 deb http://security.debian.org/debian-security ${VERSION_CODENAME}-security main contrib non-free
 deb-src http://security.debian.org/debian-security ${VERSION_CODENAME}-security main contrib non-free
 
-deb http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME}-updates main contrib non-free
-deb-src http://ftp.halifax.rwth-aachen.de/debian/ ${VERSION_CODENAME}-updates main contrib non-free
+deb http://ftp.de.debian.org/debian/ ${VERSION_CODENAME}-updates main contrib non-free
+deb-src http://ftp.de.debian.org/debian/ ${VERSION_CODENAME}-updates main contrib non-free
 EOF
-        judge "update mirrors to halifax"
+        judge "update mirrors to ftp.de.debian.org"
     else
         print_error "can't find backup file for sources.list"
     fi
@@ -269,14 +270,49 @@ function xray_install() {
     judge "add nobody user to nobody group"
 }
 
+
+function clash_install() {
+    print_info "Installing Clash-Core (Premium)"
+    wget https://github.com/Dreamacro/clash/releases/download/premium/clash-linux-amd64-2022.11.25.gz -O clash.gz
+    judge "Download Clash-core"
+
+    gzip --decompress --keep clash.gz
+    judge "Extract Clash-core"
+
+    mv clash-linux-amd64 /usr/local/bin/clash
+    judge "Move Clash-core to /usr/local/bin"
+
+    tee -a /etc/systemd/system/clash.service <<EOF
+[Unit]
+Description=Clash daemon, A rule-based proxy in Go.
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/local/bin/clash -f /etc/clash/clash.yml
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    judge "Make Clash systemd service"
+
+    systemctl enable --now clash.service
+
+    echo -e  "======================================================="
+    print_ok "Put your Clash config file in /etc/clash/clash.yml"
+    echo -e  "======================================================="
+}
+
+
 function configure_bash() {
     tee -a $HOME/.bashrc <<EOF
 export PATH=/usr/local/bin:\$PATH
 
 alias nv="nvim"
 alias tm="tmux"
-alias pt="proxychains -q -f /etc/proxychains4.conf"
-alias spt="sudo proxychains -q -f /etc/proxychains4.conf"
+alias pt="proxychains4 -q -f /etc/proxychains4.conf"
+alias spt="sudo proxychains4 -q -f /etc/proxychains4.conf"
 EOF
     judge "configure bash"
 }
@@ -350,17 +386,6 @@ function matrix_synapse_install_pypi() {
     exit
 }
 
-#function matrix_synapse_configure_pypi() {
-#    cd $HOME/synapse
-#    read -rp "Enter your domain (Server Name) for synapse (e.g. sub.example.xxx):" domain
-#    python -m synapse.app.homeserver --server-name ${domain} --config-path homeserver.yaml --generate-config --report-stats=no
-#}
-
-#function matrix_synapse_start_pypi() {
-#    source $HOME/synapse/env/bin/activate
-#    synctl start
-#}
-
 function postgres_install() {
     installit postgresql
 }
@@ -402,6 +427,7 @@ function main_menu() {
 
     echo -e "==================== Anti Filter ===================="
     echo -e "${Green}1. Install Xray${Color_Off}"
+    echo -e "${Green}1. Install Clash-Core${Color_Off}"
     echo -e "${Green}2. Change DNS to Shecan${Color_Off}"
     echo -e "${Green}3. Change DNS to Cloudflare${Color_Off}"
     echo -e "======================= Tools ======================="
@@ -409,7 +435,7 @@ function main_menu() {
     echo -e "${Green}5. Basic Optimization${Color_Off}"
     echo -e "${Green}6. Disable Firewalls${Color_Off}"
     echo -e "${Green}7. Configure Bash${Color_Off}"
-    echo -e "${Green}8. Change Mirrors to Halifax${Color_Off}"
+    echo -e "${Green}8. Change Mirrors to ftp.de.debian.org${Color_Off}"
     echo -e "${Green}9. Install Caddy 2${Color_Off}"
     echo -e "====================== Services ====================="
     echo -e "${Green}10. Matrix Menu${Color_Off}"
@@ -421,33 +447,36 @@ function main_menu() {
             xray_install
             ;;
         2)
-            shecan_dns
+            clash_install
             ;;
         3)
-            cloudflare_dns
+            shecan_dns
             ;;
         4)
-            install_deps
+            cloudflare_dns
             ;;
         5)
-            basic_optimization
+            install_deps
             ;;
         6)
-            disable_firewalls
+            basic_optimization
             ;;
         7)
-            configure_bash
+            disable_firewalls
             ;;
         8)
-            debian_halifax_mirrors
+            configure_bash
             ;;
         9)
-            caddy_install
+            debian_de
             ;;
         10)
-            matrix_menu
+            caddy_install
             ;;
         11)
+            matrix_menu
+            ;;
+        12)
             print_ok "Exit"
             exit 0
             ;;

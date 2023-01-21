@@ -279,7 +279,7 @@ function clash_install() {
     gzip --decompress --keep clash.gz
     judge "Extract Clash-core"
 
-    mv clash-linux-amd64 /usr/local/bin/clash
+    mv clash /usr/local/bin/clash
     judge "Move Clash-core to /usr/local/bin"
 
     tee -a /etc/systemd/system/clash.service <<EOF
@@ -427,19 +427,19 @@ function main_menu() {
 
     echo -e "==================== Anti Filter ===================="
     echo -e "${Green}1. Install Xray${Color_Off}"
-    echo -e "${Green}1. Install Clash-Core${Color_Off}"
-    echo -e "${Green}2. Change DNS to Shecan${Color_Off}"
-    echo -e "${Green}3. Change DNS to Cloudflare${Color_Off}"
+    echo -e "${Green}2. Install Clash-Core${Color_Off}"
+    echo -e "${Green}3. Change DNS to Shecan${Color_Off}"
+    echo -e "${Green}4. Change DNS to Cloudflare${Color_Off}"
     echo -e "======================= Tools ======================="
-    echo -e "${Green}4. Install Usfull Packages${Color_Off}"
-    echo -e "${Green}5. Basic Optimization${Color_Off}"
-    echo -e "${Green}6. Disable Firewalls${Color_Off}"
-    echo -e "${Green}7. Configure Bash${Color_Off}"
-    echo -e "${Green}8. Change Mirrors to ftp.de.debian.org${Color_Off}"
-    echo -e "${Green}9. Install Caddy 2${Color_Off}"
+    echo -e "${Green}5. Install Usfull Packages${Color_Off}"
+    echo -e "${Green}6. Basic Optimization${Color_Off}"
+    echo -e "${Green}7. Disable Firewalls${Color_Off}"
+    echo -e "${Green}8. Configure Bash${Color_Off}"
+    echo -e "${Green}9. Change Mirrors to ftp.de.debian.org${Color_Off}"
+    echo -e "${Green}10. Install Caddy 2${Color_Off}"
     echo -e "====================== Services ====================="
-    echo -e "${Green}10. Matrix Menu${Color_Off}"
-    echo -e "${Yellow}11. Exit${Color_Off}"
+    echo -e "${Green}11. Matrix Menu${Color_Off}"
+    echo -e "${Yellow}12. Exit${Color_Off}"
 
     read -rp "Enter an Option: " menu_num
     case $menu_num in 

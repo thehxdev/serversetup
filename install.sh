@@ -279,8 +279,10 @@ function clash_install() {
     gzip --decompress --keep clash.gz
     judge "Extract Clash-core"
 
-    mv clash /usr/local/bin/clash
+    cp clash /usr/local/bin/clash
     judge "Move Clash-core to /usr/local/bin"
+
+    chmod +x /usr/local/bin/clash
 
     tee -a /etc/systemd/system/clash.service <<EOF
 [Unit]

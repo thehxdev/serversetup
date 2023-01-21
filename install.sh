@@ -297,6 +297,9 @@ WantedBy=multi-user.target
 EOF
     judge "Make Clash systemd service"
 
+    mkdir -p /etc/clash/
+    touch /etc/clash/clash.yml
+
     systemctl enable --now clash.service
 
     echo -e  "======================================================="
